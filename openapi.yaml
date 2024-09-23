@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: Ecommerce - Shopper API
+  contact:
+    email: support@codica.gr
+  version: '1.0'
+servers:
+  - url: https://domain.com/site/ec-shopper
+tags:
+  - name: ec-shopper
+    description: Vat Validation endpoint
+
+paths:
+  /vat-validation:
+    post:
+      tags:
+        - ec-shopper
+      summary: Validate VAT
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - vat
+              properties:
+                token:
+                  type: string
+                country_id:
+                  type: integer
+                  example: 83
+                country_code:
+                  type: string
+                  example: 'EL'
+                vat:
+                  type: string
+                  example: 'EL801237200'
+                  minLength: 9
+                  maxLength: 20
+                  pattern: '^[A-Z]{1,2}\d+$'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '400':
+          $ref: '#/components/responses/ValidatorError'
+
+
+components:
+  responses:
+    ValidatorError:
+      description: The required fields are not present/correct.
+  schemas:
+    Response:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        error_code:
+          type: string
+          example: null
+          nullable: true
+        error_description:
+          type: string
+          example: null
+          nullable: true
+        debug_error:
+          type: object
+          example: null
+          nullable: true
+        is_valid:
+          type: boolean
+          example: false
+        shopper_scope:
+          type: string
+          enum:
+            - exempted
+            - paying
+        company:
+          type: string
+          example: "CODICACLOUD Ι Κ Ε"
+          nullable: true
+        doy:
+          type: string
+          example: "ΗΛΙΟΥΠΟΛΗΣ"
+          nullable: true
+        first_main_act:
+          type: string
+          example: "ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΥ ΗΛΕΚΤΡΟΝΙΚΩΝ ΣΥΣΤΗΜΑΤΩΝ"
+          nullable: true
