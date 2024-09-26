@@ -5,90 +5,903 @@ info:
     email: support@codica.gr
   version: '1.0'
 servers:
-  - url: https://domain.com/site/ec-shopper
+  - url: https://dev-new.xpatit.gr/api/v1/ec-shopper
 tags:
   - name: ec-shopper
-    description: Vat Validation endpoint
+    description: Management of shoppers
+  - name: ec-shopper-address
+    description: Management of shopper addresses
+  - name: ec-shopper-category
+    description: Management of shopper categories
 
 paths:
-  /vat-validation:
+  /ec-shopper:
+    get:
+      tags:
+        - ec-shopper
+      summary: Get shoppers
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: The numbers of items to return
+          required: true
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+          description: The number of items to skip before starting to collect the result set
+        - in: query
+          name: enabled
+          schema:
+            type: boolean
+          description: To get enabled shoppers
+        - in: query
+          name: shopperCategoryIds
+          schema:
+            type: array
+            items:
+              type: integer
+              minimum: 1
+            description: To get shoppers based on their category
+          style: form
+          explode: false
+        - in: query
+          name: roles
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [user, guest, moderator]
+            description: Roles to filter shoppers
+          style: form
+          explode: false
+      responses:
+        '200':
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shoppers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Shopper'
+        '400':
+          $ref: '#/components/responses/ValidatorError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/MissingAbilityError'
     post:
       tags:
         - ec-shopper
-      summary: Validate VAT
+      summary: Store a new shopper
+      description: To add extra translations the locale must be supported.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - translations
+                - email
+                - password
+                - roles
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                  nullable: true
+                translations:
+                  $ref: '#/components/schemas/ShopperTranslationsOnRequest'
+                email:
+                  type: string
+                  example: "foo@bar.com"
+                password:
+                  type: string
+                  example: "12345678"
+                roles:
+                  type: array
+                  items:
+                    type: string
+                  example: ["user"]
+                shopperCategoryIds:
+                  type: array
+                  items:
+                    type: integer
+                    minimum: 1
+                  example: [2, 3]
+                customer_number:
+                  type: string
+                  nullable: true
+                  example: "sj8lUc1Zjjsj8lUc1Zjj"
+      responses:
+        '201':
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shopper:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShopperCreate'
+        '400':
+          $ref: '#/components/responses/ValidatorError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/MissingAbilityError'
+  /ec-shopper/{shopperId}:
+    get:
+      tags:
+        - ec-shopper
+      summary: Get shopper
+      parameters:
+        - name: shopperId
+          in: path
+          description: The shopper id to get
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shopper:
+                    $ref: '#/components/schemas/Shopper'
+        '400':
+          $ref: '#/components/responses/ValidatorError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/MissingAbilityError'
+    put:
+      tags:
+        - ec-shopper
+      summary: Update specified shopper
+      description: |-
+        - At least one parameter is required on the request body.
+        - To add extra translations the locale must be supported.
       requestBody:
         content:
           application/json:
             schema:
               type: object
-              required:
-                - vat
               properties:
-                token:
+                enabled:
+                  type: boolean
+                  example: true
+                  nullable: true
+                translations:
+                  $ref: '#/components/schemas/ShopperTranslationsOnRequest'
+                email:
                   type: string
-                country_id:
-                  type: integer
-                  example: 83
-                country_code:
+                  example: "foo@bar.com"
+                password:
                   type: string
-                  example: 'EL'
-                vat:
+                  example: "12345678"
+                roles:
+                  type: array
+                  items:
+                    type: string
+                  example: ["user"]
+                shopperCategoryIds:
+                  type: array
+                  items:
+                    type: integer
+                    minimum: 1
+                  example: [2, 3]
+                customer_number:
                   type: string
-                  example: 'EL801237200'
-                  minLength: 9
-                  maxLength: 20
-                  pattern: '^[A-Z]{1,2}\d+$'
+                  nullable: true
+              oneOf:
+                - required: ["enabled"]
+                - required: ["translations"]
+                - required: ["email"]
+                - required: ["password"]
+                - required: ["roles"]
+                - required: ["shopperCategoryIds"]
+                - required: ["customer_number"]
+      parameters:
+        - name: shopperId
+          in: path
+          description: The shopper id to update
+          required: true
+          schema:
+            type: integer
+            minimum: 1
       responses:
         '200':
-          description: Successful operation
+          description: Successful operation.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
+                type: array
+                items:
+                  type: string
+                example: ['Translations has been updated', 'Email has been updated.']
+
         '400':
           $ref: '#/components/responses/ValidatorError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/MissingAbilityError'
+    delete:
+      tags:
+        - ec-shopper
+      summary: Delete specified shopper
+      parameters:
+        - name: shopperId
+          in: path
+          description: The shopper id to delete
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Shopper with id {shopperId} has been deleted.
+        '400':
+          $ref: '#/components/responses/ValidatorError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/MissingAbilityError'
+        '422':
+          description: Unable to delete shopper.
+  /ec-shopper-address:
+    post:
+      tags:
+        - ec-shopper-address
+      summary: Store a new shopper address
+      description: Extra Fields (erp client, rf-code) are partially supported from 'fields' post parameter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - user_id
+                - ec_tax_category_id
+                - title
+                - only_shipping
+                - first_name
+                - last_name
+                - address
+                - zip_code
+                - city
+                - phone
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                  minimum: 1
+                  description: ID of the user associated with the address
+                ec_tax_category_id:
+                  type: integer
+                  minimum: 1
+                  description: Tax category ID associated with the address
+                  example: 1
+                title:
+                  type: string
+                  example: "The Address title"
+                only_shipping:
+                  type: boolean
+                  description: Whether this is for shipping purposes only
+                first_name:
+                  type: string
+                  example: "Foo"
+                last_name:
+                  type: string
+                  example: "Bar"
+                address:
+                  type: string
+                  example: "Address Str. 9"
+                zip_code:
+                  type: string
+                  example: "17237"
+                city:
+                  type: string
+                  example: "Athens"
+                phone:
+                  type: string
+                  example: "6981234567"
+                country:
+                  type: string
+                  example: "Greece"
+                  description: Must not be present if ec_country_id given
+                state:
+                  type: string
+                  example: "Attiki"
+                  description: Required when country is present
+                ec_country_id:
+                  type: integer
+                  minimum: 1
+                  example: 83
+                  description: Must not be present if country given
+                ec_state_id:
+                  type: integer
+                  minimum: 1
+                  example: 476
+                  description: Required when ec_country_id is present
+                vat_number:
+                  type: string
+                  example: "Vat number"
+                company_name:
+                  type: string
+                  example: "The Company Name"
+                tax_office:
+                  type: string
+                  maxLength: 255
+                  description: Required when 'vat_number' is present
+                occupation:
+                  type: string
+                  maxLength: 255
+                  description: Required when 'vat_number' is present
+                building:
+                  type: string
+                floor:
+                  type: string
+                bell:
+                  type: string
+                contact_phone:
+                  type: string
+                notes:
+                  type: string
+                fields:
+                  type: object
+                  additionalProperties:
+                    type: string
+                    maxLength: 255
+                    description: The fields parameter supports dynamic slugs that start with `user-address-`.
+                  example:
+                    user-address-rf-code: "RF12345"
+                    user-address-erp-client-id: "ERP5678"
+              oneOf:
+                - required: [vat_number]
+                  properties:
+                    company_name:
+                      type: string
+                    tax_office:
+                      type: string
+                    occupation:
+                      type: string
+                - not:
+                    required: [vat_number]
+      responses:
+        '201':
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shopperAddresses:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShopperAddress'
+        '400':
+          $ref: '#/components/responses/ValidatorError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/MissingAbilityError'
+        '422':
+          description: Error creating extra fields. Address has been created
+  /ec-shopper-address/{shopperAddressId}:
+    get:
+      tags:
+        - ec-shopper-address
+      summary: Get shopper address
+      parameters:
+        - name: shopperAddressId
+          in: path
+          description: The shopper address id to get
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shopperAddress:
+                    $ref: '#/components/schemas/ShopperAddress'
+        '400':
+          $ref: '#/components/responses/ValidatorError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/MissingAbilityError'
+    put:
+      tags:
+        - ec-shopper-address
+      summary: Update specified shopper address
+      description: |-
+        - At least one parameter is required on the request body.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ec_tax_category_id:
+                  type: integer
+                  minimum: 1
+                  description: Tax category ID associated with the address
+                  example: 1
+                title:
+                  type: string
+                  example: "The Address title"
+                only_shipping:
+                  type: boolean
+                  description: Whether this is for shipping purposes only
+                first_name:
+                  type: string
+                  example: "Foo"
+                last_name:
+                  type: string
+                  example: "Bar"
+                address:
+                  type: string
+                  example: "Address Str. 9"
+                zip_code:
+                  type: string
+                  example: "17237"
+                city:
+                  type: string
+                  example: "Athens"
+                phone:
+                  type: string
+                  example: "6981234567"
+                country:
+                  type: string
+                  example: "Greece"
+                  description: Must not be present if ec_country_id given
+                state:
+                  type: string
+                  example: "Attiki"
+                  description: Required when country is present
+                ec_country_id:
+                  type: integer
+                  minimum: 1
+                  example: 83
+                  description: Must not be present if country given
+                ec_state_id:
+                  type: integer
+                  minimum: 1
+                  example: 476
+                  description: Required when ec_country_id is present
+                vat_number:
+                  type: string
+                  example: "Vat number"
+                company_name:
+                  type: string
+                  example: "The Company Name"
+                tax_office:
+                  type: string
+                  maxLength: 255
+                  description: Required when 'vat_number' is present
+                occupation:
+                  type: string
+                  maxLength: 255
+                  description: Required when 'vat_number' is present
+                building:
+                  type: string
+                floor:
+                  type: string
+                bell:
+                  type: string
+                contact_phone:
+                  type: string
+                notes:
+                  type: string
+                fields:
+                  type: object
+                  additionalProperties:
+                    type: string
+                    maxLength: 255
+                    description: The fields parameter supports dynamic slugs that start with `user-address-`.
+                  example:
+                    user-address-rf-code: "RF12345"
+                    user-address-erp-client-id: "ERP5678"
+      parameters:
+        - name: shopperAddressId
+          in: path
+          description: The shopper address id to update
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example: ['Fields has been updated', 'address has been updated.']
 
+        '400':
+          $ref: '#/components/responses/ValidatorError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/MissingAbilityError'
+    delete:
+      tags:
+        - ec-shopper-address
+      summary: Delete specified shopper address
+      parameters:
+        - name: shopperAddressId
+          in: path
+          description: The shopper id to delete
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Shopper Address with id {shopperAddressId} has been deleted.
+        '400':
+          $ref: '#/components/responses/ValidatorError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/MissingAbilityError'
+        '422':
+          description: Unable to delete shopper.
+  /ec-shopper-category:
+    get:
+      tags:
+        - ec-shopper-category
+      summary: Get shopper categories
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: The numbers of items to return
+          required: true
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+          description: The number of items to skip before starting to collect the result set
+        - in: query
+          name: enabled
+          schema:
+            type: boolean
+          description: To get enabled shopper categories
+        - in: query
+          name: hide_prices
+          schema:
+            type: boolean
+          description: To get shopper categories that hide prices
+        - in: query
+          name: apply_on_invoice
+          schema:
+            type: boolean
+          description: To get shopper categories that apply on invoice
+        - in: query
+          name: apply_on_receipt
+          schema:
+            type: boolean
+          description: To get shopper categories that apply on receipt
+        - in: query
+          name: auto_apply_on_register
+          schema:
+            type: boolean
+          description: To get the shopper category that auto applies uppon register
+      responses:
+        '200':
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shopper_categories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShopperCategory'
+        '400':
+          $ref: '#/components/responses/ValidatorError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/MissingAbilityError'
 
+security:
+  - bearerAuth: []
 components:
   responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+    MissingAbilityError:
+      description: Token doesn't not have all required abilities
     ValidatorError:
       description: The required fields are not present/correct.
   schemas:
-    Response:
+    Shopper:
       type: object
       properties:
-        error:
+        id:
+          type: integer
+          example: 1
+          minimum: 1
+        enabled:
           type: boolean
-          example: false
-        error_code:
+          example: true
+        email:
           type: string
-          example: null
-          nullable: true
-        error_description:
+          example: "foo@bar.com"
+        dod:
           type: string
-          example: null
+          example: "1998-12-25"
+        gender:
+          type: string
+          example: "male"
           nullable: true
-        debug_error:
+        last_logged_in_at:
+          type: string
+          example: "2024-09-24T05:52:01.000000Z"
+        customer_number:
+          type: string
+          example: "NaO6IKsj8lUc1NaO6IKsj8lUc1"
+        preferredLocale:
+          type: string
+          nullable: true
+          example: "el"
+        shopperCategoryIds:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+        translations:
+          $ref: '#/components/schemas/ShopperTranslations'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShopperAddress'
+    ShopperCreate:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          minimum: 1
+        enabled:
+          type: boolean
+          example: true
+        email:
+          type: string
+          example: "foo@bar.com"
+        dod:
+          type: string
+          example: "1998-12-25"
+        gender:
+          type: string
+          example: "male"
+          nullable: true
+        last_logged_in_at:
+          type: string
+          example: "2024-09-24T05:52:01.000000Z"
+        customer_number:
+          type: string
+          example: "NaO6IKsj8lUc1NaO6IKsj8lUc1"
+        preferredLocale:
+          type: string
+          nullable: true
+        shopperCategoryIds:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+        translations:
+          $ref: '#/components/schemas/ShopperTranslations'
+        addresses:
           type: object
-          example: null
-          nullable: true
-        is_valid:
+    ShopperTranslations:
+      type: object
+      properties:
+        locale:
+          type: object
+          properties:
+            first_name:
+              type: string
+              example: "locale's first name"
+            last_name:
+              type: string
+              example: "locale's last name"
+    ShopperTranslationsOnRequest:
+      type: object
+      properties:
+        el:
+          description: the locale must me supported
+          type: object
+          properties:
+            first_name:
+              type: string
+              example: "Fist Name Greek"
+            last_name:
+              type: string
+              example: "Last Name Greek"
+    ShopperAddress:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          example: 111
+        user_id:
+          type: integer
+          minimum: 1
+          example: 1
+        ec_tax_category_id:
+          type: integer
+          minimum: 1
+          example: 1
+        title:
+          type: string
+          example: "Address Title"
+        only_shipping:
           type: boolean
           example: false
-        shopper_scope:
+        first_name:
           type: string
-          enum:
-            - exempted
-            - paying
-        company:
+          example: "First Name"
+        last_name:
           type: string
-          example: "CODICACLOUD Ι Κ Ε"
+          example: "Last Name"
+        vat_number:
+          type: string
           nullable: true
-        doy:
+          example: "1088745899"
+        company_name:
           type: string
-          example: "ΗΛΙΟΥΠΟΛΗΣ"
           nullable: true
-        first_main_act:
+          example: "COMPANY Ι Κ Ε"
+        tax_office:
           type: string
-          example: "ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΥ ΗΛΕΚΤΡΟΝΙΚΩΝ ΣΥΣΤΗΜΑΤΩΝ"
           nullable: true
+          example: "ΚΕΦΟΔΕ ΑΤΤΙΚΗΣ"
+        occupation:
+          type: string
+          nullable: true
+          example:  "ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ ΠΡΟΓΡΑΜΜΑΤΙΣΜΟΥ ΗΛΕΚΤΡΟΝΙΚΩΝ ΣΥΣΤΗΜΑΤΩΝ"
+        default_billing:
+          type: boolean
+          example: true
+        default_shipping:
+          type: boolean
+          example: false
+        phone:
+          type: string
+          example: "2109405020"
+          nullable: true
+        address:
+          type: string
+          example: "Address Str 21"
+          nullable: true
+        city:
+          type: string
+          example: "City"
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        state:
+          type: string
+          nullable: true
+        ec_country_id:
+          type: integer
+          minimum: 1
+          example: 83
+        ec_state_id:
+          type: integer
+          minimum: 1
+          example: 476
+        latitude:
+          type: string
+          nullable: true
+        longitude:
+          type: string
+          nullable: true
+        zip_code:
+          type: string
+          nullable: true
+          example: "17235"
+        building:
+          type: string
+          nullable: true
+          example: "A"
+        floor:
+          type: string
+          nullable: true
+          example: "ΙΣΟΓΕΙΟ"
+        bell:
+          type: string
+          nullable: true
+          example: "CODICA"
+        contact_phone:
+          type: string
+          nullable: true
+          example: "2109405020"
+        notes:
+          type: string
+          nullable: true
+          example: "ΠΑΡΑΚΑΛΩ ΝΑ ΜΑΣ ΚΑΝΕΤΕ ΜΙΑ ΚΛΗΣΗ ΠΡΙΝ ΤΗΝ ΠΑΡΑΔΟΣΗ"
+        fields:
+          additionalProperties:
+            type: string
+            maxLength: 255
+          example:
+            user-address-rf-code: "RF12345"
+            user-address-erp-client-id: "ERP5678"
+    ShopperCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          minimum: 1
+        enabled:
+          type: boolean
+          example: true
+        hidden:
+          type: boolean
+          example: false
+        hide_prices:
+          type: boolean
+          example: false
+        apply_on_invoice:
+          type: boolean
+          example: true
+        apply_on_receipt:
+          type: integer
+          example: true
+        auto_apply_on_register:
+          type: integer
+          example: false
+        translations:
+          $ref: '#/components/schemas/ShopperCategoryTranslations'
+    ShopperCategoryTranslations:
+      type: object
+      properties:
+        locale:
+          type: object
+          properties:
+            title:
+              type: string
+              example: "locale's title"
+            description:
+              type: string
+              nullable: true
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
