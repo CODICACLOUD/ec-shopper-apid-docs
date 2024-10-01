@@ -5,7 +5,7 @@ info:
     email: support@codica.gr
   version: '1.0'
 servers:
-  - url: https://dev-new.xpatit.gr/api/v1/ec-shopper
+  - url: https://domain.com/api/v1/ec-shopper
 tags:
   - name: ec-shopper
     description: Management of shoppers
