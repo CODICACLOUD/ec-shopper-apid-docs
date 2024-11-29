@@ -281,6 +281,7 @@ paths:
                 - first_name
                 - last_name
                 - address
+                - address_number
                 - zip_code
                 - city
                 - phone
@@ -309,7 +310,10 @@ paths:
                   example: "Bar"
                 address:
                   type: string
-                  example: "Address Str. 9"
+                  example: "Address Street"
+                address_number:
+                  type: string
+                  example: "9"
                 zip_code:
                   type: string
                   example: "17237"
@@ -461,7 +465,10 @@ paths:
                   example: "Bar"
                 address:
                   type: string
-                  example: "Address Str. 9"
+                  example: "Address Street"
+                address_number:
+                  type: string
+                  example: "9"
                 zip_code:
                   type: string
                   example: "17237"
@@ -804,7 +811,11 @@ components:
           nullable: true
         address:
           type: string
-          example: "Address Str 21"
+          example: "Address Street"
+          nullable: true
+        address_number:
+          type: string
+          example: "21"
           nullable: true
         city:
           type: string
